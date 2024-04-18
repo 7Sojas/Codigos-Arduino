@@ -17,7 +17,6 @@ const HABILITAR_OPERACAO_INSERIR = true;
 // Função para comunicação serial
 const serial = async (
     valoresDht11Umidade,
-    valoresDht11Temperatura,
     valoresLm35Temperatura
 ) => {
     let poolBancoDados = ''
@@ -29,8 +28,8 @@ const serial = async (
             // Credenciais do banco de dados
             host: 'localhost',
             user: 'root',
-            password: 'xxx-xxx',
-            database: 'sprint2',
+            password: 'xxxx',
+            database: 'sojas7',
             port: 3306
         }
     ).promise();
@@ -59,13 +58,11 @@ const serial = async (
     arduino.pipe(new serialport.ReadlineParser({ delimiter: '\r\n' })).on('data', async (data) => {
         console.log(data);
         const valores = data.split(';');
-        const dht11Umidade = parseFloat(valores[0]);
-        const dht11Temperatura = parseFloat(valores[1]);
-        const lm35Temperatura = parseFloat(valores[2]);
+        const dht11Umidade = parseFloat(valores[1]);
+        const lm35Temperatura = parseFloat(valores[0]);
 
         // Armazena os valores dos sensores nos arrays correspondentes
         valoresDht11Umidade.push(dht11Umidade);
-        valoresDht11Temperatura.push(dht11Temperatura);
         valoresLm35Temperatura.push(lm35Temperatura);
 
         // Insere os dados no banco de dados (se habilitado)
@@ -74,10 +71,10 @@ const serial = async (
             // altere!
             // Este insert irá inserir os dados na tabela "medida"
             await poolBancoDados.execute(
-                'INSERT INTO medida (dht11_umidade, dht11_temperatura, lm35_temperatura) VALUES (?, ?, ?)',
-                [dht11Umidade, dht11Temperatura, lm35Temperatura]
+                'INSERT INTO leituraSensor (temperaturaLm , umidadeDht) VALUES (?, ?)',
+                [lm35Temperatura, dht11Umidade]
             );
-            console.log("valores inseridos no banco: ", dht11Umidade + ", " + dht11Temperatura + ", " + ", " + lm35Temperatura)
+            console.log("valores inseridos no banco: ", lm35Temperatura + ", " + dht11Umidade)
         
         }
         
@@ -94,7 +91,6 @@ const serial = async (
 // Função para criar e configurar o servidor web
 const servidor = (
     valoresDht11Umidade,
-    valoresDht11Temperatura,
     valoresLm35Temperatura
 ) => {
     const app = express();
@@ -115,9 +111,6 @@ const servidor = (
     app.get('/sensores/dht11/umidade', (_, response) => {
         return response.json(valoresDht11Umidade);
     });
-    app.get('/sensores/dht11/temperatura', (_, response) => {
-        return response.json(valoresDht11Temperatura);
-    });
     app.get('/sensores/lm35/temperatura', (_, response) => {
         return response.json(valoresLm35Temperatura);
     });
@@ -127,20 +120,17 @@ const servidor = (
 (async () => {
     // Arrays para armazenar os valores dos sensores
     const valoresDht11Umidade = [];
-    const valoresDht11Temperatura = [];
     const valoresLm35Temperatura = [];
 
     // Inicia a comunicação serial
     await serial(
         valoresDht11Umidade,
-        valoresDht11Temperatura,
         valoresLm35Temperatura,
     );
 
     // Inicia o servidor web
     servidor(
         valoresDht11Umidade,
-        valoresDht11Temperatura,
         valoresLm35Temperatura
     );
 })();
