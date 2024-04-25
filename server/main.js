@@ -26,11 +26,11 @@ const serial = async (
         {
             // altere!
             // Credenciais do banco de dados
-            host: 'localhost',
-            user: 'root',
-            password: 'xxxx',
+            host: '10.18.32.221',
+            user: 'usr_insert',
+            password: 'Sojas7#2024',
             database: 'sojas7',
-            port: 3306
+            port: 3307
         }
     ).promise();
 
