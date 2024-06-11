@@ -1,5 +1,3 @@
-// Importa os módulos necessários
-// não altere!
 const serialport = require('serialport'); // Módulo para comunicação serial
 const express = require('express'); // Módulo para criar um servidor web
 const mysql = require('mysql2'); // Módulo para conectar ao MySQL
@@ -26,9 +24,9 @@ const serial = async (
         {
             // altere!
             // Credenciais do banco de dados
-            host: '10.18.32.221',
-            user: 'usr_insert',
-            password: 'Sojas7#2024',
+            host: '10.18.34.28',
+            user: 'aluno',
+            password: 'Sptech#2024',
             database: 'sojas7',
             port: 3307
         }
@@ -57,27 +55,28 @@ const serial = async (
     // Processa os dados recebidos do Arduino
     arduino.pipe(new serialport.ReadlineParser({ delimiter: '\r\n' })).on('data', async (data) => {
         console.log(data);
-        const valores = data.split(';');
-        const dht11Umidade = parseFloat(valores[1]);
-        const lm35Temperatura = parseFloat(valores[0]);
+        const valores = data.split(',');
+        const lm35TemperaturaReal = parseFloat(valores[0]);
+        const dht11UmidadeReal = parseFloat(valores[1]);
+
+        // Gerar dados fictícios
+        const lm35Temperaturas = [lm35TemperaturaReal, lm35TemperaturaReal + 8, lm35TemperaturaReal - 8, lm35TemperaturaReal + 5];
+        const dht11Umidades = [dht11UmidadeReal, dht11UmidadeReal + 10, dht11UmidadeReal - 10, dht11UmidadeReal + 5];
 
         // Armazena os valores dos sensores nos arrays correspondentes
-        valoresDht11Umidade.push(dht11Umidade);
-        valoresLm35Temperatura.push(lm35Temperatura);
+        valoresLm35Temperatura.push(...lm35Temperaturas);
+        valoresDht11Umidade.push(...dht11Umidades);
 
         // Insere os dados no banco de dados (se habilitado)
         if (HABILITAR_OPERACAO_INSERIR) {
-
-            // altere!
-            // Este insert irá inserir os dados na tabela "medida"
-            await poolBancoDados.execute(
-                'INSERT INTO leituraSensor (temperaturaLm , umidadeDht) VALUES (?, ?)',
-                [lm35Temperatura, dht11Umidade]
-            );
-            console.log("valores inseridos no banco: ", lm35Temperatura + ", " + dht11Umidade)
-        
+            for (let i = 0; i < 4; i++) {
+                await poolBancoDados.execute(
+                    'INSERT INTO leituraSensor (temperaturaLm, umidadeDht, fksensor) VALUES (ROUND(?), ROUND(?), ?)',
+                    [lm35Temperaturas[i], dht11Umidades[i], `${i + 1}`]
+                );
+                console.log("valores inseridos no banco: ", "TEMPERATURA:", lm35Temperaturas[i] + ", UMIDADE: " + dht11Umidades[i] + ", FKSENSOR" + (i + 1));
+            }
         }
-        
     });
 
     // Evento para lidar com erros na comunicação serial
@@ -85,7 +84,6 @@ const serial = async (
         console.error(`Erro no arduino (Mensagem: ${mensagem}`)
     });
 }
-
 
 // não altere!
 // Função para criar e configurar o servidor web
@@ -114,7 +112,7 @@ const servidor = (
     app.get('/sensores/lm35/temperatura', (_, response) => {
         return response.json(valoresLm35Temperatura);
     });
-    }
+}
 
 // Função principal assíncrona para iniciar a comunicação serial e o servidor web
 (async () => {
@@ -125,7 +123,7 @@ const servidor = (
     // Inicia a comunicação serial
     await serial(
         valoresDht11Umidade,
-        valoresLm35Temperatura,
+        valoresLm35Temperatura
     );
 
     // Inicia o servidor web
