@@ -12,6 +12,15 @@ const SERVIDOR_PORTA = 3300;
 // true -> insere
 const HABILITAR_OPERACAO_INSERIR = true;
 
+function gerarValoresFicticios(valorReal, quantidade, variacao) {
+    const valores = [];
+    for (let i = 0; i < quantidade; i++) {
+        const variacaoAleatoria = Math.random() * (variacao * 2) - variacao;
+        valores.push(valorReal + variacaoAleatoria);
+    }
+    return valores;
+}   
+
 // Função para comunicação serial
 const serial = async (
     valoresDht11Umidade,
@@ -60,8 +69,8 @@ const serial = async (
         const dht11UmidadeReal = parseFloat(valores[1]);
 
         // Gerar dados fictícios
-        const lm35Temperaturas = [lm35TemperaturaReal, lm35TemperaturaReal + 8, lm35TemperaturaReal - 8, lm35TemperaturaReal + 5];
-        const dht11Umidades = [dht11UmidadeReal, dht11UmidadeReal + 10, dht11UmidadeReal - 10, dht11UmidadeReal + 5];
+        const lm35Temperaturas = gerarValoresFicticios(lm35TemperaturaReal, 28, 5);
+        const dht11Umidades = gerarValoresFicticios(dht11UmidadeReal, 28, 5);
 
         // Armazena os valores dos sensores nos arrays correspondentes
         valoresLm35Temperatura.push(...lm35Temperaturas);
@@ -69,12 +78,12 @@ const serial = async (
 
         // Insere os dados no banco de dados (se habilitado)
         if (HABILITAR_OPERACAO_INSERIR) {
-            for (let i = 0; i < 4; i++) {
+            for (let contador = 0; contador < 28; contador++) {
                 await poolBancoDados.execute(
                     'INSERT INTO leituraSensor (temperaturaLm, umidadeDht, fksensor) VALUES (ROUND(?), ROUND(?), ?)',
-                    [lm35Temperaturas[i], dht11Umidades[i], `${i + 1}`]
+                    [lm35Temperaturas[contador], dht11Umidades[contador], `${contador + 1}`]
                 );
-                console.log("valores inseridos no banco: ", "TEMPERATURA:", lm35Temperaturas[i] + ", UMIDADE: " + dht11Umidades[i] + ", FKSENSOR" + (i + 1));
+                console.log("valores inseridos no banco: ", "TEMPERATURA:", lm35Temperaturas[contador] + ", UMIDADE: " + dht11Umidades[contador] + ", FKSENSOR: " + (contador + 1));
             }
         }
     });
