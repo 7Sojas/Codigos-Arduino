@@ -2,10 +2,10 @@
 #define dht_type DHT11 //define um valor constante para o DHT11
 
 //variáveis LM35 - temperatura 
-int sensorTemperaturaLM = A1; // Saída do sensor no arduíno.  
+int sensorTemperaturaLM = A4; // Saída do sensor no arduíno.  
 float temperaturaReal = 0; //Variável que armazenará a temperatura lida, float armazena valores reais ou flutuantes, que contém casas decimais. 
 
-int dht_pin = A3; //-- entrada analógica
+int dht_pin = A2; //-- entrada analógica
 DHT dht_1 = DHT(dht_pin, dht_type); 
 // -- criando um objeto com o tipo e o pin
 
@@ -38,5 +38,5 @@ void loop() {
     Serial.println(umidadeReal);
   }
 
-  delay(5000); //Intervalo de 5 segundos antes de pular linha
+  delay(10000); //Intervalo de 5 segundos antes de pular linha
 }
